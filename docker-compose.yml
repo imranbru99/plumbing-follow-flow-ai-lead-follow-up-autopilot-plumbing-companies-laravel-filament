@@ -1,0 +1,62 @@
+﻿services:
+  app:
+    build: .
+    image: plumbingfollowflow-app:latest
+    container_name: plumbingfollowflow_app
+    ports:
+      - "8118:8000"
+    environment:
+      APP_NAME: PlumbingFollowFlow
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8118
+      APP_KEY: "base64:gcmpayZRNAfAl9eNGoDK/l8r99/esJz11SCgoWEKWqo="
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: plumbing_follow_flow
+      DB_USERNAME: pff
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      SESSION_DRIVER: database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_CHANNEL: stderr
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: plumbingfollowflow_mysql
+    environment:
+      MYSQL_DATABASE: plumbing_follow_flow
+      MYSQL_USER: pff
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "33118:3306"
+    volumes:
+      - pff_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: plumbingfollowflow_redis
+    ports:
+      - "63808:6379"
+    restart: unless-stopped
+
+volumes:
+  pff_mysql_data:
